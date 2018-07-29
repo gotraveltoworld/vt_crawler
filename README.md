@@ -3,7 +3,7 @@ Use jquery to get the pronunciation challenge content of the voicetube service f
 
 # Config
 1. You need to create a file for configure(include your accout and password).
-# configure.py
+#### configure.py
 ```python
 class Config:
     __email = '<your email>'
