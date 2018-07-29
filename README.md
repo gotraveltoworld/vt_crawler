@@ -1,7 +1,7 @@
 # vt_crawler
 Use jquery to get the pronunciation challenge content of the voicetube service for the personal note.
 
-# Config
+## Config
 1. You need to create a file for configure(include your accout and password).
 #### configure.py
 ```python
