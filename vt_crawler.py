@@ -8,6 +8,10 @@ from pyquery import PyQuery as pq
 from utils.helper import get_words_meaning
 from configure import Config
 
+since = datetime(2018, 7, 28)
+until = since + timedelta(days=1)
+
+
 article = {
     'title': '',
     'content': []
@@ -30,9 +34,6 @@ if response:
         'refreshToken': response.cookies.get('refreshToken'),
         'userToken': response.cookies.get('userToken')
     }
-    since = datetime(2018, 7, 28)
-    until = since + timedelta(days=1)
-    results = []
     diff_days = abs((since - until).days) if abs((since - until).days) else 1
     for day in range(diff_days):
         day_format = (since + timedelta(days=day)).strftime('%Y%m%d')
