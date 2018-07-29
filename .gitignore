@@ -3,3 +3,4 @@ output_voices/*.md
 configure.py
 *__pycache__*
 venv/*
+untracked/
