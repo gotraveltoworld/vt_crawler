@@ -16,8 +16,8 @@ class Config:
     @staticmethod
     def out_path():
         return {
-            'my': 'k:\/English_Study\/vt_notes\/others\/voice',
-            'host': 'k:\/English_Study\/vt_notes\/others\/hosts'
+            'my': '<your voice files path(depend on your disk)>',
+            'host': '<host files path(depend on your disk)>'
         }
     @staticmethod
     def date_conf():
