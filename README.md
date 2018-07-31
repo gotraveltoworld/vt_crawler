@@ -16,6 +16,7 @@ class Config:
     @staticmethod
     def out_path():
         return {
+            'notes': '<your note files path on your disk>',
             'my': '<your voice files path(depend on your disk)>',
             'host': '<host files path(depend on your disk)>'
         }

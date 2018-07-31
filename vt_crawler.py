@@ -1,6 +1,7 @@
 import re
 import time
 from datetime import datetime, timedelta
+import os
 
 import requests
 from pyquery import PyQuery as pq
@@ -18,7 +19,12 @@ article = {
 }
 my_voices_dir = Config().out_path().get('my', 'output_voice')
 host_voices_dir = Config().out_path().get('host', 'output_voice')
-output_notes = 'output_notes'
+output_notes = Config().out_path().get('notes', 'output_notes')
+
+# 確保檔案目錄已經存在
+for path in [my_voices_dir, host_voices_dir, output_notes]:
+    if not os.path.exists(os.path.abspath(output_notes)):
+        os.mkdir(os.path.abspath(output_notes))
 
 login = 'https://tw.voicetube.com/login?apilang=zh_tw&next=/&mtc=vt_web_home_header_signin&ref=vt_web_home_header_signin'
 headers = {
