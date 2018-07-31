@@ -8,8 +8,8 @@ from pyquery import PyQuery as pq
 from utils.helper import get_words_meaning
 from configure import Config
 
-since = datetime(2018, 7, 28)
-until = since + timedelta(days=1)
+since = datetime.strptime(Config.date_conf()['since'], "%Y%m%d")
+until = since + timedelta(days=Config.date_conf()['until'])
 
 
 article = {
@@ -27,7 +27,7 @@ headers = {
 }
 
 same_con = requests.Session()
-response = same_con.post(login, headers=headers, data=Config().get_conf())
+response = same_con.post(login, headers=headers, data=Config.get_conf())
 if response:
     cookies = {
         'accessToken': response.cookies.get('accessToken'),
@@ -53,6 +53,7 @@ if response:
                     with open('{0}/{1}口說挑戰.mp3'.format(my_voices_dir, day_format), 'wb') as f:
                         f.write(response.content)
             # 內文
+            article['content'] = [] # 重新指派空陣列
             for e in doc('div').filter('.video-element-width'):
                 article['title'] = pq(e)('div').filter('.sm-text-size')('a').text()
                 for content in pq(e)('div').filter('.text-size'):
@@ -65,25 +66,27 @@ if response:
             host_record = div('div').filter('.audio-player')('audio')('source').attr('src')
             host_question = div('div').filter('.sm-text-size').text()
             if host_record:
+                print('開始下載主持人錄音:{0}'.format(day_format))
                 response = requests.get(host_record)
                 if hasattr(response, 'status_code') and response.status_code == 200:
                     with open('{0}/{1}({2})口說挑戰.mp3'.format(host_voices_dir, day_format, host_name), 'wb') as f:
                         f.write(response.content)
 
-            # 產生筆記
-            with open('{0}/vt{1}.md'.format(output_notes, day_format), 'w', encoding='utf8') as file:
-                file.write('# Topic\n\n')
-                file.write('> {0} <br>\n'.format(article['title']))
-                file.write('> {0} <br>\n'.format(article['content'][0]))
-                file.write('> {0} <br>\n\n'.format(article['content'][1]))
-                file.write('## Host\n')
-                file.write('Host: {0}\n'.format(host_name))
-                file.write('Today issue: {0}\n\n'.format(host_question))
+                # 產生筆記
+                print('開始產生筆記:{0}'.format(day_format))
+                with open('{0}/vt{1}.md'.format(output_notes, day_format), 'w', encoding='utf8') as file:
+                    file.write('# Topic\n\n')
+                    file.write('> {0} <br>\n'.format(article['title']))
+                    file.write('> {0} <br>\n'.format(article['content'][0]))
+                    file.write('> {0} <br>\n\n'.format(article['content'][1]))
+                    file.write('## Host\n')
+                    file.write('Host: {0}\n'.format(host_name))
+                    file.write('Today issue: {0}\n\n'.format(host_question))
 
-                file.write('## learning points\n')
-                word_number = 1
-                for words in get_words_meaning(doc):
-                    file.write('{0}. _\n'.format(word_number))
-                    word_number += 1
-                    for w in words:
-                        file.write('\t* {0}\n'.format(w))
+                    file.write('## learning points\n')
+                    word_number = 1
+                    for words in get_words_meaning(doc):
+                        file.write('{0}. _\n'.format(word_number))
+                        word_number += 1
+                        for w in words:
+                            file.write('\t* {0}\n'.format(w))
