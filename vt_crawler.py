@@ -40,6 +40,7 @@ if response:
         'refreshToken': response.cookies.get('refreshToken'),
         'userToken': response.cookies.get('userToken')
     }
+    cookies.update(Config.other_cookie())
     diff_days = abs((since - until).days) if abs((since - until).days) else 1
     for day in range(diff_days):
         day_format = (since + timedelta(days=day)).strftime('%Y%m%d')
