@@ -14,6 +14,11 @@ class Config:
             'remember': '1'
         }
     @staticmethod
+    def other_cookie():
+        return {
+            'vt-origin': '1'
+        }
+    @staticmethod
     def out_path():
         return {
             'notes': '<your note files path on your disk>',
