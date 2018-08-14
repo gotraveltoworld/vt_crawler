@@ -55,6 +55,7 @@ if response:
             # 下載自己的錄音
             my_record = doc('#user-audio-record-player').children().attr('src')
             if my_record:
+                print('開始下載個人錄音:{0},{1}'.format(day_format, my_record))
                 response = requests.get(my_record)
                 if hasattr(response, 'status_code') and response.status_code == 200:
                     with open('{0}/{1}口說挑戰.mp3'.format(my_voices_dir, day_format), 'wb') as f:
