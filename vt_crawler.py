@@ -87,9 +87,9 @@ if response:
                     file.write('> {0} <br>\n'.format(article['content'][0]))
                     file.write('> {0} <br>\n\n'.format(article['content'][1]))
                     file.write('## Host\n')
-                    file.write('Host: {0}\n'.format(host_name))
-                    file.write('Today issue: {0}\n\n'.format(host_question))
-
+                    file.write('Host: {0} \n<br>'.format(host_name))
+                    file.write('Today issue: {0}\n'.format(host_question))
+                    file.write('<br><br>')
                     file.write('## learning points\n')
                     word_number = 1
                     for words in get_words_meaning(doc):
