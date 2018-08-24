@@ -3,6 +3,7 @@ Use jquery to get the pronunciation challenge content of the voicetube service f
 
 ## Config
 1. You need to create a file for configure(include your accout and password).
+2. You need to set your output path on your disk for the host's record, your record and the notes.
 #### configure.py
 ```python
 class Config:
