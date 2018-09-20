@@ -33,3 +33,5 @@ class Config:
              'until': 2 # 持續天數
         }
 ```
+## New feature
+Use the asyncio to call the Wev page.
