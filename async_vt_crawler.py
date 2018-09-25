@@ -60,12 +60,6 @@ async def generate_note(con=None, day_format='', headers={}, cookies={}):
                 personal_voice = '{0}/{1}口說挑戰.mp3'.format(my_voices_dir, day_format)
                 async with aiofiles.open(personal_voice, mode='wb') as f:
                     await f.write(response.content)
-        # 內文
-        article['content'] = [] # 重新指派空陣列
-        for e in doc('div').filter('.video-element-width'):
-            article['title'] = pq(e)('div').filter('.sm-text-size')('a').text()
-            for content in pq(e)('div').filter('.text-size'):
-                article['content'].append(pq(content).text())
 
         # 下載主人持的姓名和錄音
         div = doc('div').filter('#host-audio-scope')
@@ -81,7 +75,13 @@ async def generate_note(con=None, day_format='', headers={}, cookies={}):
                 async with aiofiles.open(host_voice, mode='wb') as f:
                     await f.write(response.content)
 
-            # 產生筆記
+            # 內文,  產生筆記
+            article['content'] = [] # 重新指派空陣列
+            for e in doc('div').filter('.video-element-width'):
+                article['title'] = pq(e)('div').filter('.sm-text-size')('a').text()
+                for content in pq(e)('div').filter('.text-size'):
+                    article['content'].append(pq(content).text())
+            print(article['title'])
             print('開始產生筆記:{0}'.format(day_format))
             note_name = '{0}/vt{1}.md'.format(output_notes, day_format)
             with open(note_name, 'w', encoding='utf8') as file:
