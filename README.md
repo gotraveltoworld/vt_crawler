@@ -34,7 +34,7 @@ class Config:
         }
 ```
 ### Run download
-Use the sync script to downlaod the notes from the web page.
+Use the sync script to download the notes from the web page.
 ```
 python vt_crawler.py
 ```
