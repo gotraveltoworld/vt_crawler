@@ -2,7 +2,7 @@
 Use jquery to get the pronunciation challenge content of the voicetube service for the personal note.
 
 ## Config
-1. You need to create a file for configure(include your accout and password).
+1. You need to create a file for configure(include your account and password).
 2. You need to set your output path on your disk for the host's record, your record and the notes.
 #### configure.py
 ```python
@@ -33,5 +33,13 @@ class Config:
              'until': 2 # 持續天數
         }
 ```
+### Run download
+Use the sync script to downlaod the notes from the web page.
+```
+python vt_crawler.py
+```
 ## New feature
-Use the asyncio to call the Wev page.
+Use the asyncio to download the notes from the web page.
+```
+python async_vt_crawler.py
+```
