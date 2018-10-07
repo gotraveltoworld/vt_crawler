@@ -1,5 +1,5 @@
 # vt_crawler
-Use jquery to get the pronunciation challenge content of the voicetube service for the personal note.
+Use "requests" and "pyjquery" to get the pronunciation challenge content of the voicetube service for the personal note.
 
 ## Config
 1. You need to create a file for configure(include your account and password).
@@ -17,7 +17,7 @@ class Config:
     @staticmethod
     def other_cookie():
         return {
-            'vt-origin': '1'
+            'vt-origin': '1' # Keep the page of the original version.
         }
     @staticmethod
     def out_path():
