@@ -2,16 +2,17 @@ import re
 import time
 from datetime import datetime, timedelta
 import os
+import json
 
 import requests
-from pyquery import PyQuery as pq
 
-from utils.helper import get_words_meaning
 from configure import Config
 
 since = datetime.strptime(Config.date_conf()['since'], "%Y%m%d")
-until = since + timedelta(days=Config.date_conf()['until'])
-
+if Config.date_conf()['until']:
+    until = since + timedelta(days=Config.date_conf()['until'])
+else:
+    until = since + timedelta(days=1)
 
 article = {
     'title': '',
@@ -26,12 +27,15 @@ for path in [my_voices_dir, host_voices_dir, output_notes]:
     if not os.path.exists(os.path.abspath(output_notes)):
         os.mkdir(os.path.abspath(output_notes))
 
+# 登入
 login = 'https://tw.voicetube.com/login?apilang=zh_tw&next=/&mtc=vt_web_home_header_signin&ref=vt_web_home_header_signin'
 headers = {
     'User-Agent':
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
 }
-
+userId = '1352160'
+platform = 'Web'
+# 建立通同連線
 same_con = requests.Session()
 response = same_con.post(login, headers=headers, data=Config.get_conf())
 if response:
@@ -41,60 +45,87 @@ if response:
         'userToken': response.cookies.get('userToken')
     }
     cookies.update(Config.other_cookie())
-    diff_days = abs((since - until).days) if abs((since - until).days) else 1
-    for day in range(diff_days):
-        day_format = (since + timedelta(days=day)).strftime('%Y%m%d')
-        response = same_con.get(
-            'https://tw.voicetube.com/everyday/{0}'.format(day_format),
-            headers=headers,
-            cookies=cookies
-        )
-        if hasattr(response, 'status_code') and response.status_code == 200:
-            origin_text = response.text
-            doc = pq(origin_text)
-            # 下載自己的錄音
-            my_record = doc('#user-audio-record-player').children().attr('src')
-            if my_record:
-                print('開始下載個人錄音:{0},{1}'.format(day_format, my_record))
-                response = requests.get(my_record)
-                if hasattr(response, 'status_code') and response.status_code == 200:
-                    with open('{0}/{1}口說挑戰.mp3'.format(my_voices_dir, day_format), 'wb') as f:
-                        f.write(response.content)
-            # 內文
-            article['content'] = [] # 重新指派空陣列
-            for e in doc('div').filter('.video-element-width'):
-                article['title'] = pq(e)('div').filter('.sm-text-size')('a').text()
-                for content in pq(e)('div').filter('.text-size'):
-                    article['content'].append(pq(content).text())
+    # API: https://vtapi.voicetube.com/v2.1.1/zhTW/pronunciationChallenges/status?platform=Web&userId=1352160&startAt=2018-10-10&endAt=2018-10-20
+    # My data: https://vtapi.voicetube.com/v2.1.1/zhTW/pronunciationChallenges/2358/comments?platform=Web&fetchMode=myComments&userId=1352160&page[offset]=0
+    api_root = 'https://vtapi.voicetube.com/v2.1.1/zhTW/pronunciationChallenges'
+    api_status = 'status?platform={0}&userId={1}&startAt={2}&endAt={3}'.format(
+        platform, userId, since.strftime('%Y-%m-%d'), until.strftime('%Y-%m-%d')
+    )
+    response = same_con.get(
+        '{0}/{1}'.format(api_root, api_status),
+        headers=headers,
+        cookies=cookies
+    )
+    if hasattr(response, 'status_code') and response.status_code == 200:
+        status_res = response.json()
+        status_jsons = status_res.get('data')
+        for s in status_jsons:
+            parameters = '{0}?platform={1}&userId={2}'.format(s.get('id'), platform, userId)
+            single_page = same_con.get(
+                '{0}/{1}'.format(api_root, parameters),
+                headers=headers,
+                cookies=cookies
+            )
+            if hasattr(response, 'status_code') and response.status_code == 200:
+                day_format = s.get('date', '').replace('-', '')
+                page_res = single_page.json()
+                json_file = page_res.get('data', {})
+                if json_file.get('audioUrl'):
+                    host_name  = json_file.get('host', {}).get('displayName')
+                    print('開始下載主持人 {0} 錄音:{1}'.format(host_name, day_format))
+                    response = requests.get(json_file.get('audioUrl'))
+                    if hasattr(response, 'status_code') and response.status_code == 200:
+                        with open('{0}/{1}({2})口說挑戰.mp3'.format(host_voices_dir, day_format, host_name), 'wb') as f:
+                            f.write(response.content)
+                    article = {}
+                    is_empty = False
+                    content_keys = ['title', 'content', 'vocabularies', 'translatedContent']
+                    for key in content_keys:
+                        if not json_file.get(key):
+                            is_empty = True
+                        else:
+                            article.setdefault(key, json_file.get(key))
+                    # 產生筆記
+                    if not is_empty:
+                        print('開始產生筆記:{0}'.format(day_format))
+                        with open('{0}/vt{1}.md'.format(output_notes, day_format), 'w', encoding='utf8') as note:
+                            note.write('# Topic\n\n')
+                            note.write('> {0} <br>\n'.format(article['title']))
+                            note.write('> {0} <br>\n'.format(article['content']))
+                            note.write('> {0} <br>\n\n'.format(article['translatedContent']))
+                            note.write('## Host\n')
+                            note.write('Host: {0} \n<br>'.format(host_name))
+                            note.write('<br>\n')
+                            note.write('## learning points\n')
+                            word_number = 1
+                            for words in article['vocabularies']:
+                                note.write('{0}. _\n'.format(word_number))
+                                word_number += 1
+                                for w in words.get('definitions', []):
+                                    note.write('\t* {0} [{1}] {2} {3}\n'.format(
+                                        w.get('text', ''),
+                                        w.get('kk', ''),
+                                        w.get('pos', ''),
+                                        w.get('content', '')
+                                    ))
 
-            # 下載主人持的姓名和錄音
-            div = doc('div').filter('#host-audio-scope')
-            # 主持人姓名和錄音
-            host_name = div('span').filter('.text-size')('a')('span').text()
-            host_record = div('div').filter('.audio-player')('audio')('source').attr('src')
-            host_question = div('div').filter('.sm-text-size').text()
-            if host_record:
-                print('開始下載主持人錄音:{0}'.format(day_format))
-                response = requests.get(host_record)
-                if hasattr(response, 'status_code') and response.status_code == 200:
-                    with open('{0}/{1}({2})口說挑戰.mp3'.format(host_voices_dir, day_format, host_name), 'wb') as f:
-                        f.write(response.content)
-
-                # 產生筆記
-                print('開始產生筆記:{0}'.format(day_format))
-                with open('{0}/vt{1}.md'.format(output_notes, day_format), 'w', encoding='utf8') as file:
-                    file.write('# Topic\n\n')
-                    file.write('> {0} <br>\n'.format(article['title']))
-                    file.write('> {0} <br>\n'.format(article['content'][0]))
-                    file.write('> {0} <br>\n\n'.format(article['content'][1]))
-                    file.write('## Host\n')
-                    file.write('Host: {0} \n<br>'.format(host_name))
-                    file.write('Today issue: {0}\n'.format(host_question))
-                    file.write('<br><br>\n')
-                    file.write('## learning points\n')
-                    word_number = 1
-                    for words in get_words_meaning(doc):
-                        file.write('{0}. _\n'.format(word_number))
-                        word_number += 1
-                        for w in words:
-                            file.write('\t* {0}\n'.format(w))
+                download_myrecord = same_con.get(
+                    '{0}/{1}/comments?platform={2}&fetchMode=myComments&userId={3}&page[offset]=0'.format(
+                        api_root,
+                        s.get('id'),
+                        platform,
+                        userId),
+                    headers=headers,
+                    cookies=cookies
+                )
+                download_json = download_myrecord.json()
+                my_record = download_json.get('data', [])
+                if my_record:
+                    my_record_url = my_record[0].get('audioUrl', '')
+                    print('開始下載個人錄音:{0},{1}'.format(day_format, my_record_url))
+                    response = requests.get(my_record_url)
+                    if hasattr(response, 'status_code') and response.status_code == 200:
+                        with open('{0}/{1}口說挑戰.mp3'.format(my_voices_dir, day_format), 'wb') as f:
+                            f.write(response.content)
+                else:
+                    print('My record is empty. ', my_record)
