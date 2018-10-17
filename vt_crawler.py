@@ -33,12 +33,25 @@ headers = {
     'User-Agent':
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
 }
-userId = '1352160'
-platform = 'Web'
-# 建立通同連線
+# with open('example_html/login.html', 'r', encoding='utf8') as file:
+#     text = file.read()
+#     m = re.search('var.*userid\s*\=\s*([0-9]*);', text, re.M | re.S)
+#     m.group(1)
+# with open('example_html/login.html', 'w', encoding='utf8') as file:
+#     file.write(response.text)
+
+# 建立同連線
 same_con = requests.Session()
 response = same_con.post(login, headers=headers, data=Config.get_conf())
 if response:
+    platform = 'Web'
+    group_text = re.search('var.*userid\s*\=\s*([0-9]*);', response.text, re.M | re.S)
+    if group_text.group(0) and group_text.group(1):
+        userId = group_text.group(1)
+
+    if not userId:
+        raise Exception('Empty user id')
+
     cookies = {
         'accessToken': response.cookies.get('accessToken'),
         'refreshToken': response.cookies.get('refreshToken'),
@@ -56,6 +69,7 @@ if response:
         headers=headers,
         cookies=cookies
     )
+
     if hasattr(response, 'status_code') and response.status_code == 200:
         status_res = response.json()
         status_jsons = status_res.get('data')
@@ -70,6 +84,7 @@ if response:
                 day_format = s.get('date', '').replace('-', '')
                 page_res = single_page.json()
                 json_file = page_res.get('data', {})
+                print(s.get('date', ''), json_file)
                 if json_file.get('audioUrl'):
                     host_name  = json_file.get('host', {}).get('displayName')
                     print('開始下載主持人 {0} 錄音:{1}'.format(host_name, day_format))
@@ -93,7 +108,7 @@ if response:
                             note.write('> {0} <br>\n'.format(article['title']))
                             note.write('> {0} <br>\n'.format(article['content']))
                             note.write('> {0} <br>\n\n'.format(article['translatedContent']))
-                            note.write('[![Image]({0})](https://www.youtube.com/embed/{1}?rel=0&showinfo=0&cc_load_policy=0&controls=0&autoplay=0&iv_load_policy=3&playsinline=1&wmode=transparent&start={2}&end={3}&enablejsapi=1&origin=https://tw.voicetube.com&widgetid=1)<br>\n'.format(
+                            note.write('[![Image]({0})](https://www.youtube.com/embed/{1}?rel=0&showinfo=0&cc_load_policy=0&controls=1&autoplay=1&iv_load_policy=3&playsinline=1&wmode=transparent&start={2}&end={3}&enablejsapi=1&origin=https://tw.voicetube.com&widgetid=1)<br>\n'.format(
                                     json_file.get('imageUrl', ''),
                                     json_file.get('youtubeId', ''),
                                     json_file.get('startAt', 0),
