@@ -1,9 +1,16 @@
 # vt_crawler
-Use "requests" and "pyjquery" to get the pronunciation challenge content of the voicetube service for the personal note.
+Use "requests" and "pyquery" to get the pronunciation challenge content of the voicetube service for the personal note.
+
+### Update records
+1. Delete the "pyquery" library.
+2. Only use the "requests" to build simple crawler.
+3. Fix some of bugs about the mkdir function.
 
 ## Config
-1. You need to create a file for configure(include your account and password).
-2. You need to set your output path on your disk for the host's record, your record and the notes.
+1. You have to create a file for configure(include your account and password), to add 'configure.py' file.
+2. You have to set your output path on your disk for the record of a host, your record and the notes.
+3. You can add below script into the 'configure.py'.
+
 #### configure.py
 ```python
 class Config:
@@ -29,8 +36,8 @@ class Config:
     @staticmethod
     def date_conf():
         return {
-             'since': '20180802', # 開始日期
-             'until': 2 # 持續天數
+             'since': '20180802', # Start date
+             'until': 2 # continue days
         }
 ```
 ### Run download
