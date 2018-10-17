@@ -25,8 +25,8 @@ output_notes = Config().out_path().get('notes', 'output_notes')
 
 # 確保檔案目錄已經存在
 for path in [my_voices_dir, host_voices_dir, output_notes]:
-    if not os.path.exists(os.path.abspath(output_notes)):
-        os.mkdir(os.path.abspath(output_notes))
+    if not os.path.exists(os.path.abspath(path)):
+        os.mkdir(os.path.abspath(path))
 
 login = 'https://tw.voicetube.com/login?apilang=zh_tw&next=/&mtc=vt_web_home_header_signin&ref=vt_web_home_header_signin'
 headers = {

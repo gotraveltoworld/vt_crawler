@@ -24,8 +24,8 @@ output_notes = Config().out_path().get('notes', 'output_notes')
 
 # 確保檔案目錄已經存在
 for path in [my_voices_dir, host_voices_dir, output_notes]:
-    if not os.path.exists(os.path.abspath(output_notes)):
-        os.mkdir(os.path.abspath(output_notes))
+    if not os.path.exists(os.path.abspath(path)):
+        os.mkdir(os.path.abspath(path))
 
 # 登入
 login = 'https://tw.voicetube.com/login?apilang=zh_tw&next=/&mtc=vt_web_home_header_signin&ref=vt_web_home_header_signin'
@@ -93,9 +93,18 @@ if response:
                             note.write('> {0} <br>\n'.format(article['title']))
                             note.write('> {0} <br>\n'.format(article['content']))
                             note.write('> {0} <br>\n\n'.format(article['translatedContent']))
-                            note.write('## Host\n')
+                            note.write('[![Image]({0})](https://www.youtube.com/embed/{1}?rel=0&showinfo=0&cc_load_policy=0&controls=0&autoplay=0&iv_load_policy=3&playsinline=1&wmode=transparent&start={2}&end={3}&enablejsapi=1&origin=https://tw.voicetube.com&widgetid=1)<br>\n'.format(
+                                    json_file.get('imageUrl', ''),
+                                    json_file.get('youtubeId', ''),
+                                    json_file.get('startAt', 0),
+                                    (int(json_file.get('startAt', 0)) + int(json_file.get('duration', 0)))
+                                )
+                            )
                             note.write('Host: {0} \n<br>'.format(host_name))
+                            note.write('Today issue: {0}\n'.format(json_file.get('host', {}).get('comment', '')))
                             note.write('<br>\n')
+                            note.write('[Host record]({0})\n'.format(json_file.get('audioUrl', '')))
+                            note.write('<br><br>\n')
                             note.write('## learning points\n')
                             word_number = 1
                             for words in article['vocabularies']:
