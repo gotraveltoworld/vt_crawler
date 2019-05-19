@@ -105,7 +105,9 @@ venv.bak/
 
 # personal
 output_notes/*.md
-output_voices/*.md
+output_voices/*
+example_html/*.html
+example_html/*.json
 configure.py
 *__pycache__*
 venv/*

@@ -33,16 +33,22 @@ headers = {
     'User-Agent':
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
 }
-# with open('example_html/login.html', 'r', encoding='utf8') as file:
-#     text = file.read()
-#     m = re.search('var.*userid\s*\=\s*([0-9]*);', text, re.M | re.S)
-#     m.group(1)
-# with open('example_html/login.html', 'w', encoding='utf8') as file:
-#     file.write(response.text)
 
 # 建立同連線
 same_con = requests.Session()
-response = same_con.post(login, headers=headers, data=Config.get_conf())
+response = same_con.get(
+    'https://tw.voicetube.com/login',
+    headers=headers
+)
+csrf_cookie_name = response.cookies.get('csrf_cookie_name')
+if not csrf_cookie_name:
+    raise('Cookie is wrong!')
+cookies = {
+    'csrf_cookie_name':  csrf_cookie_name
+}
+login_data = Config.get_conf()
+login_data.update({'csrf_test_name': csrf_cookie_name})
+response = same_con.post(login, headers=headers, data=login_data, cookies=cookies)
 if response:
     platform = 'Web'
     group_text = re.search('var.*userid\s*\=\s*([0-9]*);', response.text, re.M | re.S)
@@ -96,10 +102,7 @@ if response:
                     is_empty = False
                     content_keys = ['title', 'content', 'vocabularies', 'translatedContent']
                     for key in content_keys:
-                        if not json_file.get(key):
-                            is_empty = True
-                        else:
-                            article.setdefault(key, json_file.get(key))
+                        article.setdefault(key, json_file.get(key))
                     # 產生筆記
                     if not is_empty:
                         print('開始產生筆記:{0}'.format(day_format))
@@ -107,7 +110,7 @@ if response:
                             note.write('# Topic\n\n')
                             note.write('> {0} <br>\n'.format(article['title']))
                             note.write('> {0} <br>\n'.format(article['content']))
-                            note.write('> {0} <br>\n\n'.format(article['translatedContent']))
+                            note.write('> {0} <br>\n\n'.format(article.get('translatedContent', '')))
                             note.write('[![Image]({0})](https://www.youtube.com/embed/{1}?rel=0&showinfo=0&cc_load_policy=0&controls=1&autoplay=1&iv_load_policy=3&playsinline=1&wmode=transparent&start={2}&end={3}&enablejsapi=1&origin=https://tw.voicetube.com&widgetid=1)<br>\n'.format(
                                     json_file.get('imageUrl', ''),
                                     json_file.get('youtubeId', ''),
