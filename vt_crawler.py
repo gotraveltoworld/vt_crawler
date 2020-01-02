@@ -51,7 +51,8 @@ login_data.update({'csrf_test_name': csrf_cookie_name})
 response = same_con.post(login, headers=headers, data=login_data, cookies=cookies)
 if response:
     platform = 'Web'
-    group_text = re.search('var.*userid\s*\=\s*([0-9]*);', response.text, re.M | re.S)
+    group_text = re.search(
+        'var\s*userId\s*\=\s*Number\(\"([0-9]*)\"\);', response.text, re.M | re.S)
     if group_text.group(0) and group_text.group(1):
         userId = group_text.group(1)
 
