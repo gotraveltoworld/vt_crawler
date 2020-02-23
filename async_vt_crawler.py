@@ -2,18 +2,19 @@ import re
 import time
 from datetime import datetime, timedelta
 import os
+import json
+
 import asyncio
-
-import requests
-from pyquery import PyQuery as pq
 import aiofiles
+import requests
 
-from utils.helper import get_words_meaning
 from configure import Config
 
 since = datetime.strptime(Config.date_conf()['since'], "%Y%m%d")
-until = since + timedelta(days=Config.date_conf()['until'])
-
+if Config.date_conf()['until']:
+    until = since + timedelta(days=int(Config.date_conf()['until']))
+else:
+    until = since + timedelta(days=1)
 
 article = {
     'title': '',
@@ -23,16 +24,24 @@ my_voices_dir = Config().out_path().get('my', 'output_voice')
 host_voices_dir = Config().out_path().get('host', 'output_voice')
 output_notes = Config().out_path().get('notes', 'output_notes')
 
-# 確保檔案目錄已經存在
+# Ensure the file existence
 for path in [my_voices_dir, host_voices_dir, output_notes]:
     if not os.path.exists(os.path.abspath(path)):
         os.mkdir(os.path.abspath(path))
 
-login = 'https://tw.voicetube.com/login?apilang=zh_tw&next=/&mtc=vt_web_home_header_signin&ref=vt_web_home_header_signin'
-headers = {
-    'User-Agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
-}
+def get_csrf_token(con=None, headers=None):
+    if con and headers:
+        response = con.get(
+            'https://tw.voicetube.com/login',
+            headers=headers
+        )
+        csrf_cookie_name = response.cookies.get('csrf_cookie_name')
+        if not csrf_cookie_name:
+            raise('Cookie is wrong!')
+
+        return csrf_cookie_name
+    else:
+        raise('Connecting or Headers is wrong!')
 
 async def get_everyday_page(con=None, day_format='', headers={}, cookies={}):
     return con.get(
@@ -101,25 +110,38 @@ async def generate_note(con=None, day_format='', headers={}, cookies={}):
                     for w in words:
                         file.write('\t* {0}\n'.format(w))
 
-# 使用者登入
-same_con = requests.Session()
-response = same_con.post(login, headers=headers, data=Config.get_conf())
-if response:
-    cookies = {
-        'accessToken': response.cookies.get('accessToken'),
-        'refreshToken': response.cookies.get('refreshToken'),
-        'userToken': response.cookies.get('userToken')
-    }
-    cookies.update(Config.other_cookie())
-    diff_days = abs((since - until).days) if abs((since - until).days) else 1
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(asyncio.gather(*[
-        generate_note(
-            con=same_con,
-            day_format=(since + timedelta(days=day)).strftime('%Y%m%d'),
-            headers=headers,
-            cookies=cookies
-        ) for day in range(diff_days)
-    ]))
-    loop.close()
+if __name__ == '__main__':
+    # 登入, Header and URL.
+    login = 'https://tw.voicetube.com/login?apilang=zh_tw&next=/&mtc=vt_web_home_header_signin&ref=vt_web_home_header_signin'
+    headers = {
+        'User-Agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
+    }
+    # 建立同連線, Build connection.
+    same_con = requests.Session()
+    login_data = Config.get_conf()
+    csrf_cookie_name = get_csrf_token(con=same_con, headers=headers)
+    cookies = {
+        'csrf_cookie_name':  csrf_cookie_name
+    }
+    login_data.update({'csrf_test_name': csrf_cookie_name})
+    response = same_con.post(login, headers=headers, data=login_data, cookies=cookies)
+    if response:
+        cookies = {
+            'accessToken': response.cookies.get('accessToken'),
+            'refreshToken': response.cookies.get('refreshToken'),
+            'userToken': response.cookies.get('userToken')
+        }
+        cookies.update(Config.other_cookie())
+        diff_days = abs((since - until).days) if abs((since - until).days) else 1
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(asyncio.gather(*[
+            generate_note(
+                con=same_con,
+                day_format=(since + timedelta(days=day)).strftime('%Y%m%d'),
+                headers=headers,
+                cookies=cookies
+            ) for day in range(1)
+        ]))
+        loop.close()
